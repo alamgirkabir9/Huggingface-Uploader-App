@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HuggingFace Uploader</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .file-input-container {
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            background-color: #f9f9f9;
+            transition: all 0.3s;
+        }
+        .file-input-container:hover {
+            border-color: #007bff;
+            background-color: #f0f8ff;
+        }
+        .file-input-container.drag-over {
+            border-color: #007bff;
+            background-color: #e6f3ff;
+        }
+        #files {
+            display: none;
+        }
+        .file-input-label {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: background-color 0.3s;
+        }
+        .file-input-label:hover {
+            background-color: #0056b3;
+        }
+        .upload-modes {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .upload-mode {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-mode.active {
+            border-color: #007bff;
+            background-color: #e6f3ff;
+        }
+        .upload-mode:hover {
+            border-color: #007bff;
+        }
+        .file-list {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        .remove-file {
+            color: #dc3545;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .remove-file:hover {
+            text-decoration: underline;
+        }
+        .btn {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #28a745;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .folder-instructions {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤗 HuggingFace Uploader</h1>
+        
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="hf_token">HuggingFace Token:</label>
+                <input type="password" id="hf_token" name="hf_token" required 
+                       placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                <div class="help-text">Get your token from: https://huggingface.co/settings/tokens</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="repo_id">Repository ID:</label>
+                <input type="text" id="repo_id" name="repo_id" required 
+                       placeholder="your-username/repository-name">
+                <div class="help-text">Format: username/repository-name</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="repo_type">Repository Type:</label>
+                <select id="repo_type" name="repo_type">
+                    <option value="space">Space</option>
+                    <option value="model">Model</option>
+                    <option value="dataset">Dataset</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="commit_message">Commit Message:</label>
+                <textarea id="commit_message" name="commit_message" rows="2" 
+                          placeholder="Upload via Flask App">Upload via Flask App</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Upload Type:</label>
+                <div class="upload-modes">
+                    <div class="upload-mode active" data-mode="folder">
+                        📁 Folder
+                    </div>
+                    <div class="upload-mode" data-mode="files">
+                        📄 Files
+                    </div>
+                    <div class="upload-mode" data-mode="zip">
+                        📦 ZIP Archive
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Select Files:</label>
+                <div class="file-input-container" id="fileInputContainer">
+                    <label for="files" class="file-input-label">
+                        📎 Choose Files or Drag & Drop
+                    </label>
+                    <input type="file" id="files" name="files" multiple webkitdirectory style="display: none;">
+                    <div id="uploadInstructions">
+                        <p>📁 <strong>Folder Mode:</strong> Click "Choose Files" and select a folder to upload all its contents</p>
+                        <p>All files and subdirectories will be uploaded maintaining the folder structure</p>
+                    </div>
+                </div>
+                <div class="folder-instructions">
+                    <strong>Note:</strong> When uploading folders, the browser will ask you to select a folder. 
+                    All files in the selected folder (including subfolders) will be uploaded to your HuggingFace repository with the same directory structure.
+                </div>
+                <div id="fileList" class="file-list" style="display: none;"></div>
+            </div>
+            
+            <button type="submit" class="btn" id="uploadBtn">🚀 Upload to HuggingFace</button>
+        </form>
+        
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Starting upload...</div>
+        </div>
+        
+        <div id="message"></div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        let currentMode = 'folder';
+        
+        // Upload mode switching
+        document.querySelectorAll('.upload-mode').forEach(mode => {
+            mode.addEventListener('click', function() {
+                document.querySelectorAll('.upload-mode').forEach(m => m.classList.remove('active'));
+                this.classList.add('active');
+                currentMode = this.dataset.mode;
+                
+                const fileInput = document.getElementById('files');
+                const instructions = document.getElementById('uploadInstructions');
+                
+                if (currentMode === 'zip') {
+                    fileInput.removeAttribute('webkitdirectory');
+                    fileInput.removeAttribute('multiple');
+                    fileInput.setAttribute('accept', '.zip');
+                    instructions.innerHTML = '<p>📦 Select a ZIP file to upload</p>';
+                } else if (currentMode === 'folder') {
+                    fileInput.setAttribute('webkitdirectory', '');
+                    fileInput.setAttribute('multiple', '');
+                    fileInput.removeAttribute('accept');
+                    instructions.innerHTML = `
+                        <p>📁 <strong>Folder Mode:</strong> Click "Choose Files" and select a folder to upload all its contents</p>
+                        <p>All files and subdirectories will be uploaded maintaining the folder structure</p>
+                    `;
+                } else {
+                    fileInput.removeAttribute('webkitdirectory');
+                    fileInput.setAttribute('multiple', '');
+                    fileInput.removeAttribute('accept');
+                    instructions.innerHTML = `
+                        <p>📄 <strong>Files Mode:</strong> Select one or more individual files</p>
+                        <p>Files will be uploaded to the root of your repository</p>
+                    `;
+                }
+                
+                // Clear previous selections
+                selectedFiles = [];
+                updateFileList();
+            });
+        });
+        
+        // File input handling
+        const fileInput = document.getElementById('files');
+        const fileInputContainer = document.getElementById('fileInputContainer');
+        const fileList = document.getElementById('fileList');
+        
+        fileInput.addEventListener('change', function(e) {
+            selectedFiles = Array.from(e.target.files);
+            updateFileList();
+        });
+        
+        // Drag and drop handling
+        fileInputContainer.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            fileInputContainer.classList.add('drag-over');
+        });
+        
+        fileInputContainer.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            fileInputContainer.classList.remove('drag-over');
+        });
+        
+        fileInputContainer.addEventListener('drop', function(e) {
+            e.preventDefault();
+            fileInputContainer.classList.remove('drag-over');
+            
+            const items = Array.from(e.dataTransfer.items);
+            selectedFiles = [];
+            
+            items.forEach(item => {
+                if (item.kind === 'file') {
+                    selectedFiles.push(item.getAsFile());
+                }
+            });
+            
+            updateFileList();
+        });
+        
+        function updateFileList() {
+            if (selectedFiles.length === 0) {
+                fileList.style.display = 'none';
+                return;
+            }
+            
+            fileList.style.display = 'block';
+            fileList.innerHTML = '';
+            
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                const displayName = file.webkitRelativePath || file.name;
+                fileItem.innerHTML = `
+                    <span>📄 ${displayName} (${formatFileSize(file.size)})</span>
+                    <span class="remove-file" onclick="removeFile(${index})">✕</span>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Form submission
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (selectedFiles.length === 0) {
+                showMessage('Please select files to upload', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('hf_token', document.getElementById('hf_token').value);
+            formData.append('repo_id', document.getElementById('repo_id').value);
+            formData.append('repo_type', document.getElementById('repo_type').value);
+            formData.append('commit_message', document.getElementById('commit_message').value);
+            
+            // Add files to form data
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            
+            // Show progress
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('uploadBtn').textContent = 'Uploading...';
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    checkProgress(data.upload_id);
+                } else {
+                    showMessage(data.error || 'Upload failed', 'error');
+                    resetForm();
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error.message, 'error');
+                resetForm();
+            });
+        });
+        
+        function checkProgress(uploadId) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            const interval = setInterval(() => {
+                fetch(`/progress/${uploadId}`)
+                .then(response => response.json())
+                .then(data => {
+                    progressFill.style.width = data.progress + '%';
+                    progressText.textContent = data.status;
+                    
+                    if (data.completed || data.progress === 100) {
+                        clearInterval(interval);
+                        if (data.status.includes('Error')) {
+                            showMessage(data.status, 'error');
+                        } else {
+                            showMessage('Upload completed successfully! 🎉', 'success');
+                        }
+                        resetForm();
+                    }
+                })
+                .catch(error => {
+                    clearInterval(interval);
+                    showMessage('Error checking progress: ' + error.message, 'error');
+                    resetForm();
+                });
+            }, 2000);
+        }
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            messageDiv.style.display = 'block';
+        }
+        
+        function resetForm() {
+            document.getElementById('uploadBtn').disabled = false;
+            document.getElementById('uploadBtn').textContent = '🚀 Upload to HuggingFace';
+            document.getElementById('progressContainer').style.display = 'none';
+            document.getElementById('progressFill').style.width = '0%';
+        }
+    </script>
+</body>
+</html>
