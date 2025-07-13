@@ -11,6 +11,8 @@ A Flask web application for uploading files and folders to Hugging Face Spaces, 
 - 🔄 **Background Processing**: Non-blocking uploads with threading
 - 🧹 **Auto Cleanup**: Automatic cleanup of temporary files
 - 📱 **Responsive Design**: Works on desktop and mobile devices
+  ## 🌐 Live Demo  
+**Deployed on huggingface**: [(https://huggingface.co/spaces/Alamgirapi/HuggingFace_Uploader)]
 
 ## Installation
 
